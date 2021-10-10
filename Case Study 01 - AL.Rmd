@@ -1,0 +1,105 @@
+---
+title: "Case Study - 01"
+author: "Eric Laigaie & Alex Lopez"
+date: "10/5/2021"
+output: html_document
+---
+## Introduction:
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+library(tidyverse)
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+```{r}
+beers = read.csv('/Users/alexanderlopez/Documents/SMU/Classes/MSDS_6306_Doing_Data_Science/Case_Study_1/Case-Study-01/Beers.csv', header = TRUE)
+breweries = read.csv('/Users/alexanderlopez/Documents/SMU/Classes/MSDS_6306_Doing_Data_Science/Case_Study_1/Case-Study-01/Breweries.csv', header = TRUE)
+```
+
+1.   How many breweries are present in each state?
+```{r}
+# Creating a bar plot to visualize brewery count by state
+breweries %>% group_by(State) %>% ggplot(aes(x=State, fill = State)) + geom_bar(width = .33) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=.1), aspect.ratio=1/2) + geom_text(stat='count', aes(label=..count..), vjust=-.33) + labs(title = 'Number of Breweries Per State', y = 'Number of Breweries')
+```
+
+2.   Merge beer data with the breweries data. Print the first 6 observations and the last six observations to check the merged file.  (RMD only, this does not need to be included in the presentation or the deck.)
+```{r}
+# First, review the data sets
+summary(beers)
+summary(breweries)
+
+# Merge needs to be done on the Brew_ID column
+# Need to first make brewery id column names the same
+names(beers)[5] = 'Brew_ID'
+df = merge(beers,breweries,"Brew_ID",suffixes = c('_Beers','_Brewery'))
+
+# Printing head (first 6) and tail (last 6) observations
+head(df,6)
+tail(df,6)
+```
+
+3.   Address the missing values in each column.
+```{r}
+# There are missing values in both ABV (alcohol by volume) and IBU (international bitterness unit)
+# 62 NA values for ABV (62/2410 = 3%)
+# 1005 NA values for IBU (1005/2410 = 42%)
+# Quick web search indicates that beers can have 0 ABV and IBU
+# Assume NA values equal to 0 to avoid removing approx. 40% of data
+# Change Na's to 0
+df$ABV[is.na(df$ABV)] = 0
+df$IBU[is.na(df$IBU)] = 0
+
+# Final check reveals there are 5 NA char values in Style Column
+# Since there are only 5 NA values (5/2410 = 0.2%), observations will be dropped
+sum(is.na(df))
+sum(is.na(df$Style))
+
+# Dropping remaining NA values
+df = na.omit(df)
+```
+
+4.   Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
+```{r}
+
+df %>% group_by(factor(State)) %>% summarize(med_abv = median(ABV)) %>% ggplot(aes(x=factor(State),y=med_abv)) +geom_bar(stat="identity")
+
+
+
+```
+
+5.   Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+```{r}
+
+```
+
+6.   Comment on the summary statistics and distribution of the ABV variable.
+```{r}
+
+```
+
+7.   Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
+```{r}
+
+```
+
+8.  Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.
+```{r}
+
+```
+
+In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged.
+```{r}
+
+```
+
+9. Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence.
+```{r}
+
+```
+
