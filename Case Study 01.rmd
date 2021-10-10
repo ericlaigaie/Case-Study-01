@@ -31,32 +31,69 @@ breweries %>%
 
 2.   Merge beer data with the breweries data. Print the first 6 observations and the last six observations to check the merged file.  (RMD only, this does not need to be included in the presentation or the deck.)
 ```{r}
+breweries <- breweries %>% rename(Brewery_id=Brew_ID)
+df <- merge(breweries, beers, by='Brewery_id')
 
+df <- df %>% rename(Brewery = Name.x, Beer = Name.y)
+
+head(df, 6)
+tail(df, 6)
 ```
 
 3.   Address the missing values in each column.
 ```{r}
+sapply(df, function(x) sum(is.na(x)))
+# 62 missing ABVs
+# 1005 missing IBUs
+# 5 missing Styles
 
+# Interesting note -- all rows with missing ABV is also missing IBU.
+
+df <- na.omit(df)
 ```
 
 4.   Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
-```{r}
+```{r med_abv, fig.height=5}
+df %>% group_by(State) %>% 
+  summarise(med_abv = median(ABV)) %>%
+  ggplot(aes(y=reorder(State, med_abv), x=med_abv)) + 
+  geom_bar(stat='identity', fill='darkseagreen4') +
+  labs(x='Median ABV', y='State', title='Median ABV by State')
+
+df %>% group_by(State) %>%
+  summarise(med_abv = median(ABV)) %>%
+  ggplot(aes(x=State, y=med_abv)) + geom_bar(stat='identity')
 
 ```
 
 5.   Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
 ```{r}
-
+max_ABV = max(df$ABV)
+max_IBU = max(df$IBU)
+df %>% filter(ABV == max_ABV) # Against the Grain Brewery, Louisville, KY (Brewery_id = 2)
+df %>% filter(IBU == max_IBU) # Astoria Brewing Company, Astoria, OR (Brewery_id = 375)
 ```
 
 6.   Comment on the summary statistics and distribution of the ABV variable.
 ```{r}
+summary(df$ABV)
+#   Min.   1st Qu. Median   Mean   3rd Qu.  Max. 
+# 0.02700 0.05000 0.05700 0.05992 0.06800 0.12500 
+mean(df$ABV) # .05991875
+median(df$ABV) # .057
+sd(df$ABV) # .01358475
 
+ggplot(df, aes(x=ABV)) + geom_boxplot(fill='darkseagreen4') + labs(x='ABV', title='ABV Boxplot')
 ```
 
 7.   Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
 ```{r}
+ggplot(df, aes(x=IBU, ABV)) + 
+  geom_point(size=2, color='darkseagreen3') + 
+  geom_smooth(method='lm', color='darkseagreen4') +
+  labs(x='International Bittering Units (IBU)', 'Alcohol by Volume (ABV)', title='IBU vs ABV')
 
+cor(df$IBU, df$ABV) # .671 (Strong Positive Correlation)
 ```
 
 8.  Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.
