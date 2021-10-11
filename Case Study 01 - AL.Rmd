@@ -111,6 +111,7 @@ df %>% filter(ABV>0) %>% ggplot(aes(y=ABV)) + geom_boxplot(fill='blue') + labs(t
 ```
 
 7.   Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
+Ans.    Looking at the scatter plot and smooth fit line, there is visual evidence of a positive correlation between ABV and IBU.
 ```{r}
 
 # Using all data points
