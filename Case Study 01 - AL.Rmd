@@ -9,12 +9,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-rm(list = ls())
 library(tidyverse)
 library(readr)
 library(ggplot2)
-library(dplyr)
-library(tidyr)
 ```
 
 ```{r}
@@ -25,7 +22,7 @@ breweries = read.csv('/Users/alexanderlopez/Documents/SMU/Classes/MSDS_6306_Doin
 1.   How many breweries are present in each state?
 ```{r}
 # Creating a bar plot to visualize brewery count by state
-breweries %>% group_by(State) %>% ggplot(aes(x=State, fill = State)) + geom_bar(width = .33) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=.1), aspect.ratio=1/2) + geom_text(stat='count', aes(label=..count..), vjust=-.33) + labs(title = 'Number of Breweries Per State', y = 'Number of Breweries')
+breweries %>% group_by(State) %>% ggplot(aes(x=State, fill = State)) + geom_bar(width = .33) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=.1), aspect.ratio=6/5) + geom_text(stat='count', aes(label=..count..), vjust=-.33) + labs(title = 'Number of Breweries Per State', y = 'Number of Breweries')
 ```
 
 2.   Merge beer data with the breweries data. Print the first 6 observations and the last six observations to check the merged file.  (RMD only, this does not need to be included in the presentation or the deck.)
@@ -66,25 +63,61 @@ df = na.omit(df)
 
 4.   Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
 ```{r}
+# Group_by State and then plot the medians of ABV and IBU.
 
-df %>% group_by(factor(State)) %>% summarize(med_abv = median(ABV)) %>% ggplot(aes(x=factor(State),y=med_abv)) +geom_bar(stat="identity")
+df %>% group_by(State) %>% dplyr::summarize(med_abv = median(ABV)) %>% ggplot(aes(x=reorder(State, med_abv),y=med_abv,fill=State)) + geom_bar(stat="identity",width = .33) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=.1), aspect.ratio=9/16) + labs(title = 'Median ABV per State',x='State', y = 'ABV (Alcohol by Volume)')
 
+df %>% group_by(State) %>% dplyr::summarize(med_ibu = median(IBU)) %>% ggplot(aes(x=reorder(State, med_ibu),y=med_ibu,fill=State)) + geom_bar(stat="identity",width = .33) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=.1), aspect.ratio=9/16) + labs(title = 'Median IBU per State',x='State', y = 'IBU (International Bitterness Units)')
 
+# Since there were so many Beers with 0 IBU, the mean may give better insight(?)
 
 ```
 
 5.   Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+Ans.    The state with the highest alcohol by volume beer is Colorado. The state with the most bitter beer is Oregon. 
+
 ```{r}
+
+# Function which.max will give max value for specified column.
+
+df[which.max(df$ABV),] # Beer_ID = 2565
+df[which.max(df$IBU),] # Beer_ID = 980
 
 ```
 
 6.   Comment on the summary statistics and distribution of the ABV variable.
+Ans.   The summary stats would indicate a semi-normal distribution seeing that the mean and medium are fairly similar. The histograms and box plots also show signs of a normal distribution but with a right (positive) skew. The histogram appears more "normal" once the non-alcoholic beers are filtered out of the data set.
 ```{r}
+
+# First, review the 5 number summary and std values for ABV.
+
+summary(df$ABV)
+sd(df$ABV)
+
+# Histograms
+df %>% ggplot(aes(x=ABV)) + geom_histogram(bins = 50,fill='blue') + labs(title = 'Histogram of ABV')
+
+# Non-alcoholic beers appear to be negative outliers and should be removed if we are to analyze beer ABV.
+
+df %>% filter(ABV>0) %>% ggplot(aes(x=ABV)) + geom_histogram(bins = 40,fill='blue') + labs(title = 'Histogram of ABV (excluding non-alcoholic)')
+
+# Box Plots
+df %>%  ggplot(aes(y=ABV)) + geom_boxplot(fill='blue') + labs(title = 'Histogram of ABV')
+
+df %>% filter(ABV>0) %>% ggplot(aes(y=ABV)) + geom_boxplot(fill='blue') + labs(title = 'Histogram of ABV (excluding non-alcoholic)')
+
+# Non-alcoholic beers do not seem as apparent in box plots.
 
 ```
 
 7.   Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
 ```{r}
+
+# Using all data points
+df %>% ggplot(aes(x=ABV,y=IBU)) + geom_point() + labs(title = 'ABV vs IBU')
+
+# Excluding beers with IBU > 0
+df %>% filter(IBU>0) %>% ggplot(aes(x=ABV,y=IBU)) + geom_point(color='red') + geom_smooth() + labs(title = 'ABV vs IBU') + cor(df$ABV,df$IBU)
 
 ```
 
@@ -103,3 +136,4 @@ In addition, while you have decided to use KNN to investigate this relationship 
 
 ```
 
+### comments by Emilia - uinh icdfdclop,u7y435wfrwvr e
