@@ -118,7 +118,7 @@ Ans.    Looking at the scatter plot and smooth fit line, there is visual evidenc
 df %>% ggplot(aes(x=ABV,y=IBU)) + geom_point() + labs(title = 'ABV vs IBU')
 
 # Excluding beers with IBU > 0
-df %>% filter(IBU>0) %>% ggplot(aes(x=ABV,y=IBU)) + geom_point(color='red') + geom_smooth() + labs(title = 'ABV vs IBU') + cor(df$ABV,df$IBU)
+df %>% filter(IBU>0) %>% ggplot(aes(x=ABV,y=IBU)) + geom_point(color='red') + geom_smooth() + labs(title = 'ABV vs IBU')
 
 ```
 
