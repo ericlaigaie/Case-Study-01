@@ -4,7 +4,7 @@ author: "Eric Laigaie & Alex Lopez"
 date: "10/5/2021"
 output: html_document
 ---
-## Introduction:
+### Introduction:   In this presentation, we will be looking at the locations of the breweries making beers, beer alcohol content, and beer international bitterness units. After reviewing the data, we will then look at how ABV and IBU can be used to identify whether or not a beer is an IPA or another type of Ale. Finally, we will dive into one other inference that we believe will help you decide what type of beer Budweiser should be producing.
 
 
 ```{r setup, include=FALSE}
