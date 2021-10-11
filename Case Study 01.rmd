@@ -120,12 +120,16 @@ df %>% filter(IBU == max_IBU)
 
 6.   Comment on the summary statistics and distribution of the ABV variable.
 ```{r}
-# Quick summary of ABV
+# Quick summary of ABV - full dataset
 summary(df$ABV)
 sd(df$ABV)
 
 # Make new df 'alc' <- only contains values with positive ABV
 alc <- df %>% filter(ABV > 0)
+
+# Quick summary of ABV - only alcoholic beers
+summary(alc$ABV)
+sd(alc$ABV)
 
 # Make 4 charts
 box_all <- ggplot(df, aes(x=ABV)) + geom_boxplot(binwidth=.01, fill='darkseagreen4') + 
