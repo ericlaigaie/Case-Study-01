@@ -135,5 +135,3 @@ In addition, while you have decided to use KNN to investigate this relationship 
 ```{r}
 
 ```
-
-### comments by Emilia - uinh icdfdclop,u7y435wfrwvr e
