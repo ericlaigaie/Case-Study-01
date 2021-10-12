@@ -22,7 +22,7 @@ breweries = read.csv('/Users/alexanderlopez/Documents/SMU/Classes/MSDS_6306_Doin
 1.   How many breweries are present in each state?
 ```{r}
 # Creating a bar plot to visualize brewery count by state
-breweries %>% group_by(State) %>% ggplot(aes(x=State, fill = State)) + geom_bar(width = .33) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=.1), aspect.ratio=6/5) + geom_text(stat='count', aes(label=..count..), vjust=-.33) + labs(title = 'Number of Breweries Per State', y = 'Number of Breweries')
+breweries %>% group_by(State) %>% mutate(n=n()) %>% ggplot(aes(y=reorder(State,n))) + geom_bar(width = .33, fill = 'darkseagreen4')+ geom_text(stat='count', aes(label=..count..), vjust=.33, hjust=-.1) + labs(title = 'Number of Breweries Per State', x = 'Number of Breweries',y = 'State')
 ```
 
 2.   Merge beer data with the breweries data. Print the first 6 observations and the last six observations to check the merged file.  (RMD only, this does not need to be included in the presentation or the deck.)
@@ -70,6 +70,9 @@ df %>% group_by(State) %>% dplyr::summarize(med_abv = median(ABV)) %>% ggplot(ae
 df %>% group_by(State) %>% dplyr::summarize(med_ibu = median(IBU)) %>% ggplot(aes(x=reorder(State, med_ibu),y=med_ibu,fill=State)) + geom_bar(stat="identity",width = .33) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=.1), aspect.ratio=9/16) + labs(title = 'Median IBU per State',x='State', y = 'IBU (International Bitterness Units)')
 
 # Since there were so many Beers with 0 IBU, the mean may give better insight(?)
+
+# Reviewing State means for IBU
+df %>% group_by(State) %>% dplyr::summarize(mean_ibu = mean(IBU)) %>% ggplot(aes(y=reorder(State, mean_ibu),x=mean_ibu)) + geom_bar(stat="identity", fill='darkseagreen4') + labs(title = 'Avg IBU per State',y='State', x = 'IBU (International Bitterness Units)')
 
 ```
 
