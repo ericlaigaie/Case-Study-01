@@ -124,25 +124,18 @@ df %>% filter(IBU == max_IBU)
 summary(df$ABV)
 sd(df$ABV)
 
-# Make new df 'alc' <- only contains values with positive ABV
-alc <- df %>% filter(ABV > 0)
-
-# Quick summary of ABV - only alcoholic beers
-summary(alc$ABV)
-sd(alc$ABV)
-
 # Make 4 charts
 box_all <- ggplot(df, aes(x=ABV)) + geom_boxplot(binwidth=.01, fill='darkseagreen4') + 
   labs(x='ABV', title='ABV Boxplot')
-box_alc <- ggplot(alc, aes(x=ABV)) + geom_boxplot(binwidth=.01, fill='darkseagreen3') + 
-  labs(x='ABV', title='ABV Boxplot (Only ABV > 0)')
 hist_all <- ggplot(df, aes(x=ABV)) + geom_histogram(color='black', fill='darkseagreen4') +
   labs(x='ABV', title='ABV Histogram')
-hist_alc <- ggplot(alc, aes(x=ABV)) + geom_histogram(color='black', fill='darkseagreen3') +
-  labs(x='ABV', title='ABV Histogram (Only ABV > 0)')
 
 # Arrange 4 charts
-ggarrange(box_all, box_alc, hist_all, hist_alc, nrow=2, ncol=2)
+ggarrange(box_all, hist_all, nrow=2, ncol=1)
+
+# Check for normality
+shapiro.test(df$ABV)
+qqnorm(df$ABV, col='darkseagreen4', lwd=2)
 ```
 
 7.   Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
