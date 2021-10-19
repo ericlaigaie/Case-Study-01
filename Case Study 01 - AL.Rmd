@@ -12,6 +12,9 @@ knitr::opts_chunk$set(echo = TRUE, fig.width = 6, fig.height = 5)
 library(tidyverse)
 library(readr)
 library(ggplot2)
+library(class)
+library(caret)
+library(e1071)
 ```
 
 ```{r}
@@ -77,6 +80,7 @@ df %>% group_by(State) %>% dplyr::summarize(mean_ibu = mean(IBU)) %>% ggplot(aes
 ```
 
 5.   Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+
 Ans.    The state with the highest alcohol by volume beer is Colorado. The state with the most bitter beer is Oregon. 
 
 ```{r}
@@ -89,6 +93,7 @@ df[which.max(df$IBU),] # Beer_ID = 980
 ```
 
 6.   Comment on the summary statistics and distribution of the ABV variable.
+
 Ans.   The summary stats would indicate a semi-normal distribution seeing that the mean and medium are fairly similar. The histograms and box plots also show signs of a normal distribution but with a right (positive) skew. The histogram appears more "normal" once the non-alcoholic beers are filtered out of the data set.
 ```{r}
 
@@ -114,6 +119,7 @@ df %>% filter(ABV>0) %>% ggplot(aes(y=ABV)) + geom_boxplot(fill='blue') + labs(t
 ```
 
 7.   Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
+
 Ans.    Looking at the scatter plot and smooth fit line, there is visual evidence of a positive correlation between ABV and IBU.
 ```{r}
 
@@ -121,21 +127,125 @@ Ans.    Looking at the scatter plot and smooth fit line, there is visual evidenc
 df %>% ggplot(aes(x=ABV,y=IBU)) + geom_point() + labs(title = 'ABV vs IBU')
 
 # Excluding beers with IBU = 0
-df %>% filter(IBU>0) %>% ggplot(aes(x=ABV,y=IBU)) + geom_point(color='red') + geom_smooth() + labs(title = 'ABV vs IBU')
+df %>% filter(IBU>0) %>% ggplot(aes(x=ABV,y=IBU)) + geom_point(color='red') + geom_smooth(method = 'lm') + labs(title = 'ABV vs IBU')
 
 ```
 
 8.  Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.
+
+Ans. 
 ```{r}
+
+# Create new data frame with only Ale and IPA Beers
+# Next, create dummy variable for Ale vs IPA
+
+df_ale = df %>% filter(str_detect(Style,"Ale"))
+df_IPA = df %>% filter(str_detect(Style,"IPA"))
+
+new_df = rbind.data.frame(df_ale,df_IPA)
+
+new_df$ale_IPA = grepl("Ale",new_df$Style)
+
+new_df$ale_IPA[new_df$ale_IPA == 'TRUE'] = 'Ale'
+new_df$ale_IPA[new_df$ale_IPA == 'FALSE'] = 'IPA'
+new_df$ale_IPA = as.factor(new_df$ale_IPA)
+
+# Perform KNN model using ABV and IBU
+# Hyper-tune to be completed on K value
+
+# First, standardize IBU and ABV values
+
+new_df$zABV = as.numeric(scale(new_df$ABV))
+new_df$zIBU = as.numeric(scale(new_df$IBU))
+
+# Create 70/30 Train/Test Split
+trainInd = sample(seq(1,1547,1), .7*1547)
+train = new_df[trainInd,]
+test = new_df[-trainInd,]
+
+# Initial run of KNN model with K=5 
+classifications = knn(train[,c(12,13)],test[,c(12,13)],train$ale_IPA,prob = TRUE, k = 5)
+confusionMatrix(table(classifications,test$ale_IPA))
+
+# Loop to find best value for K with 70/30 train-test split
+
+iterations = 100
+numks = 100
+splitPerc = .70
+
+masterAcc = matrix(nrow = iterations, ncol = numks)
+masterSen = matrix(nrow = iterations, ncol = numks)
+masterSpe = matrix(nrow = iterations, ncol = numks)
+
+for(j in 1:iterations)
+{
+  trainIndices = sample(1:dim(new_df)[1],round(splitPerc * dim(new_df)[1]))
+  train = new_df[trainIndices,]
+  test = new_df[-trainIndices,]
+  for(i in 1:numks)
+  {
+    classifications = knn(train[,c(12,13)],test[,c(12,13)],train$ale_IPA, prob = TRUE, k = i)
+    table(classifications,test$ale_IPA)
+    CM = confusionMatrix(table(classifications,test$ale_IPA))
+    masterAcc[j,i] = CM$overall[1]
+    masterSen[j,i] = CM$byClass[1]
+    masterSpe[j,i] = CM$byClass[2]
+  }
+  
+}
+
+MeanAcc = colMeans(masterAcc)
+MeanSen = colMeans(masterSen)
+MeanSpe = colMeans(masterSpe)
+
+plot(seq(1,numks,1),MeanAcc, type = "l")
+which.max(MeanAcc)
+max(MeanAcc)
+
+plot(seq(1,numks,1),MeanSen, type = "l")
+which.max(MeanSen)
+max(MeanSen)
+
+plot(seq(1,numks,1),MeanSpe, type = "l")
+which.max(MeanSpe)
+max(MeanSpe)
+
+# K = 6 gives highest accuracy (81%)
+# K = 10 gives highest sensitivity (87%)
+# K = 62 gives highest specificity (73%)
+
+# Run KNN model with K=6 for highest accuracy (per hyper tuning)
+classifications = knn(train[,c(12,13)],test[,c(12,13)],train$ale_IPA,prob = TRUE, k = 6)
+confusionMatrix(table(classifications,test$ale_IPA))
 
 ```
 
 In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged.
 ```{r}
+# Using Naive-Bayes to investigate relationship
+
+# Set seed and create Train/Test Split 
+set.seed(10)
+trainIndices = sample(seq(1:length(new_df$Beer_ID)),round(.7*length(new_df$Beer_ID)))
+train_nb = new_df[trainIndices,]
+test_nb = new_df[-trainIndices,]
+
+# Create model and print confusion matrix
+model = naiveBayes(train_nb[,c(12,13)],train_nb$ale_IPA,laplace = 1)
+table(predict(model,test_nb[,c(12,13)]),test_nb$ale_IPA)
+CM = confusionMatrix(table(predict(model,test_nb[,c(12,13)]),test_nb$ale_IPA))
+CM
+
 
 ```
 
 9. Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence.
 ```{r}
+# ideas: 
+# group states into regions and find the parameters for most common beer per region(mean abv/ibu?)
+# removing 0 values from data and then re-running models - only looking at alcoholic/bitter beers
+# clustering?
+# impute IBU with mean or median and rerun models? 
+# create groups for ibu and abv (low, median, high) and see what types of beers are the most popular. Per state?
 
 ```
