@@ -16,6 +16,7 @@ library(choroplethrMaps)
 library(ggpubr)
 library(class)
 library(caret)
+library(e1071)
 ```
 
 ```{r}
@@ -36,7 +37,7 @@ breweries %>%
   theme_minimal()
 
 # Load in State Brewery Counts (This changes State name from "AL" -> "alabama")
-states <- read_csv("C:\\Users\\ericl\\OneDrive\\Desktop\\SMU\\Doing Data Science - FALL 2021\\Case Study 01\\state_brewery_counts.csv")
+states <- read_csv(url("https://raw.githubusercontent.com/ericlaigaie/Case-Study-01/main/state_brewery_counts.csv"))
 
 # Import geojson for state polygons
 data(continental_us_states)
@@ -92,6 +93,45 @@ sum(is.na(df$Style))
 
 # Remove 5 missing 'Styles'
 df = na.omit(df)
+```
+
+```{r}
+# METHOD 3 - MEAN IMPUTATION BY STYLE GROUP
+
+# Remove missing Styles
+df <- df %>% filter(is.na(Style) == FALSE)
+
+# Function takes in df and imputes mean ABV and IBU. Also creates Style_Group column
+imputer <- function(mydf, myText) {
+  temp <- {{mydf}}
+  for(i in 7:8){
+    temp[is.na(temp[,i]), i] <- mean(temp[,i], na.rm = TRUE)
+  }
+  temp$Style_Group <- {{myText}}
+  output <- temp
+}
+
+# Creating new dfs for each style group
+ale <- df %>% filter(grepl('Ale', df$Style) == TRUE) %>% filter(Style != 'English India Pale Ale (IPA)')
+ipa <- df %>% filter(grepl('IPA', df$Style) == TRUE)
+lager <- df %>% filter(grepl('Lager', df$Style) == TRUE)
+stout <- df %>% filter(grepl('Stout', df$Style) == TRUE)
+other <- df %>% filter(grepl('Stout', df$Style) == FALSE &
+                grepl('Lager', df$Style) == FALSE &
+                grepl('IPA', df$Style) == FALSE &
+                grepl('IPA', df$Style) == FALSE &
+                grepl('Ale', df$Style) == FALSE)
+
+# Imputing mean ABV / IBU
+ale <- imputer(ale, 'Ale')
+ipa <- imputer(ipa, 'IPA')
+lager <- imputer(lager, 'Lager')
+stout <- imputer(stout, 'Stout')
+other <- imputer(other, 'Other')
+
+# Combine back into df
+df <- rbind(ale, ipa, lager, stout, other)
+df$Style_Group <- as.factor(df$Style_Group)
 ```
 
 4.   Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
@@ -155,22 +195,24 @@ ggplot(df, aes(x=IBU, ABV)) +
   labs(x='International Bittering Units (IBU)', y='Alcohol by Volume (ABV)', title='IBU vs ABV') +
   geom_label(label=label_x, x=100, y=.025,label.padding = unit(0.55, "lines"), label.size = 0.35, color = "black", fill="#69b3a2")
 
+# BELOW ONLY APPLICABLE WHEN NA METHOD 2 IS USED
+
 # Make new df, df_alc, which contains rows with IBU > 0 and ABV > 0
-df_alc <- df %>%
-  filter(IBU > 0 & ABV > 0)
+#df_alc <- df %>%
+#  filter(IBU > 0 & ABV > 0)
 
 # Find correlation of IBU and ABV in df_alc
-cor_alcIBUABV = round(cor(df_alc$IBU, df_alc$ABV), 3)
+#cor_alcIBUABV = round(cor(df_alc$IBU, df_alc$ABV), 3)
 
 # Make R label
-label_y = paste(c("R = ", cor_alcIBUABV), collapse = " ")
+#label_y = paste(c("R = ", cor_alcIBUABV), collapse = " ")
 
 # IBU and ABV scatterplot (From df_alc, with R label)
-ggplot(df_alc, aes(y=ABV,x=IBU)) + 
-  geom_point(size=2, color='darkseagreen3') + 
-  geom_smooth(method='lm',color='darkseagreen4') + 
-  labs(x='International Bittering Units (IBU)', y='Alcohol by Volume (ABV)', title='IBU vs ABV (IBU & ABV > 0)') +
-  geom_label(label=label_y, x=100, y=0.035,label.padding = unit(0.55, "lines"), label.size = 0.35, color = "black", fill="#69b3a2")
+#ggplot(df_alc, aes(y=ABV,x=IBU)) + 
+#  geom_point(size=2, color='darkseagreen3') + 
+#  geom_smooth(method='lm',color='darkseagreen4') + 
+#  labs(x='International Bittering Units (IBU)', y='Alcohol by Volume (ABV)', title='IBU vs ABV (IBU & ABV > 0)') +
+#  geom_label(label=label_y, x=100, y=0.035,label.padding = unit(0.55, "lines"), label.size = 0.35, color = "black", #fill="#69b3a2")
 ```
 
 8.  Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.
@@ -179,16 +221,17 @@ ggplot(df_alc, aes(y=ABV,x=IBU)) +
 # Create new data frame with only Ale and IPA Beers
 # Next, create dummy variable for Ale vs IPA
 
-df_ale = df %>% filter(str_detect(Style,"Ale"))
-df_IPA = df %>% filter(str_detect(Style,"IPA"))
+df_ale = df %>% filter(grepl("Ale", df$Style) == TRUE) %>% filter(Style != 'English India Pale Ale (IPA)')
+df_IPA = df %>% filter(grepl("IPA", df$Style) == TRUE)
 
-new_df = rbind.data.frame(df_ale,df_IPA)
+df_IPA$ale_IPA = 'IPA'
+df_ale$ale_IPA = 'Ale'
 
-new_df$ale_IPA = grepl("Ale",new_df$Style)
+new_df = rbind(df_ale,df_IPA)
 
-new_df$ale_IPA[new_df$ale_IPA == 'TRUE'] = 'Ale'
-new_df$ale_IPA[new_df$ale_IPA == 'FALSE'] = 'IPA'
 new_df$ale_IPA = as.factor(new_df$ale_IPA)
+
+new_df <- df %>% filter(Style_Group %in% c('Ale', 'IPA'))
 
 # Perform KNN model using ABV and IBU
 # Hyper-tune to be completed on K value
@@ -199,13 +242,14 @@ new_df$zABV = as.numeric(scale(new_df$ABV))
 new_df$zIBU = as.numeric(scale(new_df$IBU))
 
 # Create 70/30 Train/Test Split
-trainInd = sample(seq(1,1547,1), .7*1547)
+len <- length(new_df$Style_Group)
+trainInd = sample(seq(1,len,1), .7*len)
 train = new_df[trainInd,]
 test = new_df[-trainInd,]
 
 # Initial run of KNN model with K=5 
-classifications = knn(train[,c(12,13)],test[,c(12,13)],train$ale_IPA,prob = TRUE, k = 5)
-confusionMatrix(table(classifications,test$ale_IPA))
+classifications = knn(train[,c(7,8)],test[,c(7,8)],train$Style_Group,prob = TRUE, k = 5)
+confusionMatrix(table(classifications,test$Style_Group))
 
 # Loop to find best value for K with 70/30 train-test split
 
@@ -224,9 +268,9 @@ for(j in 1:iterations)
   test = new_df[-trainIndices,]
   for(i in 1:numks)
   {
-    classifications = knn(train[,c(12,13)],test[,c(12,13)],train$ale_IPA, prob = TRUE, k = i)
-    table(classifications,test$ale_IPA)
-    CM = confusionMatrix(table(classifications,test$ale_IPA))
+    classifications = knn(train[,c(7,8)],test[,c(7,8)],train$Style_Group, prob = TRUE, k = i)
+    table(classifications,test$Style_Group)
+    CM = confusionMatrix(table(classifications,test$Style_Group))
     masterAcc[j,i] = CM$overall[1]
     masterSen[j,i] = CM$byClass[1]
     masterSpe[j,i] = CM$byClass[2]
@@ -255,8 +299,8 @@ max(MeanSpe)
 # K = 62 gives highest specificity (73%)
 
 # Run KNN model with K=6 for highest accuracy (per hyper tuning)
-classifications = knn(train[,c(12,13)],test[,c(12,13)],train$ale_IPA,prob = TRUE, k = 6)
-confusionMatrix(table(classifications,test$ale_IPA))
+classifications = knn(train[,c(7,8)],test[,c(7,8)],train$Style_Group,prob = TRUE, k = 6)
+confusionMatrix(table(classifications,test$Style_Group))
 
 ```
 
@@ -271,9 +315,9 @@ train_nb = new_df[trainIndices,]
 test_nb = new_df[-trainIndices,]
 
 # Create model and print confusion matrix
-model = naiveBayes(train_nb[,c(12,13)],train_nb$ale_IPA,laplace = 1)
-table(predict(model,test_nb[,c(12,13)]),test_nb$ale_IPA)
-CM = confusionMatrix(table(predict(model,test_nb[,c(12,13)]),test_nb$ale_IPA))
+model = naiveBayes(train_nb[,c(7,8)],train_nb$Style_Group,laplace = 1)
+table(predict(model,test_nb[,c(7,8)]),test_nb$Style_Group)
+CM = confusionMatrix(table(predict(model,test_nb[,c(7,8)]),test_nb$Style_Group))
 CM
 
 
