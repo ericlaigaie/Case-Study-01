@@ -281,6 +281,16 @@ CM
 # clustering?
 # impute IBU with mean or median and rerun models? 
 # create groups for ibu and abv (low, median, high) and see what types of beers are the most popular. Per state?
+
+# adding in state regions to find mean ABV/IBU per region
+regions = as.data.frame(read.csv('/Users/alexanderlopez/Documents/SMU/Classes/MSDS_6306_Doing_Data_Science/Case_Study_1/Case-Study-01/state_regions.csv', header = TRUE))
+
+# remove State Column and rename abbreviations to 'State' to merge
+regions = subset(regions, select = -c(State))
+names(regions)[2] = 'State'
+
+
+new_df2 = merge(df,regions,"State")
 ```
 
 ```{r}
@@ -298,7 +308,7 @@ CM
 #new_df2$Style_Type = as.factor(names(new_df2[11:15])[max.col(new_df2[11:15])])
 
 # dropping dummy variables to clean df
-#new_df2 = subset(new_df2, select = -c(Ale,IPA,Lager,Lager,Stout,Other))
+# new_df2 = subset(new_df2, select = -c(Ale,IPA,Lager,Lager,Stout,Other))
 
 ```
 
