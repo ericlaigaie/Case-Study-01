@@ -52,16 +52,49 @@ tail(df,6)
 # Quick web search indicates that beers can have 0 ABV and IBU
 # Assume NA values equal to 0 to avoid removing approx. 40% of data
 # Change Na's to 0
-df$ABV[is.na(df$ABV)] = 0
-df$IBU[is.na(df$IBU)] = 0
+#df$ABV[is.na(df$ABV)] = 0
+#df$IBU[is.na(df$IBU)] = 0
 
 # Final check reveals there are 5 NA char values in Style Column
 # Since there are only 5 NA values (5/2410 = 0.2%), observations will be dropped
-sum(is.na(df))
-sum(is.na(df$Style))
+#sum(is.na(df))
+#sum(is.na(df$Style))
 
-# Dropping remaining NA values
-df = na.omit(df)
+# Remove missing Styles
+df <- df %>% filter(is.na(Style) == FALSE)
+
+# Function takes in df and imputes mean ABV and IBU. Also creates Style_Group column
+imputer <- function(mydf, myText) {
+  temp <- {{mydf}}
+  for(i in 4:5){
+    temp[is.na(temp[,i]), i] <- mean(temp[,i], na.rm = TRUE)
+  }
+  temp$Style_Group <- {{myText}}
+  output <- temp
+}
+
+# Creating new dfs for each style group
+ale <- df %>% filter(grepl('Ale', df$Style) == TRUE) %>% filter(Style != 'English India Pale Ale (IPA)')
+ipa <- df %>% filter(grepl('IPA', df$Style) == TRUE)
+lager <- df %>% filter(grepl('Lager', df$Style) == TRUE)
+stout <- df %>% filter(grepl('Stout', df$Style) == TRUE)
+other <- df %>% filter(grepl('Stout', df$Style) == FALSE &
+                grepl('Lager', df$Style) == FALSE &
+                grepl('IPA', df$Style) == FALSE &
+                grepl('IPA', df$Style) == FALSE &
+                grepl('Ale', df$Style) == FALSE)
+
+# Imputing mean ABV / IBU
+ale <- imputer(ale, 'Ale')
+ipa <- imputer(ipa, 'IPA')
+lager <- imputer(lager, 'Lager')
+stout <- imputer(stout, 'Stout')
+other <- imputer(other, 'Other')
+
+
+# Combine back into df
+df <- rbind(ale, ipa, lager, stout, other)
+df$Style_Group <- as.factor(df$Style_Group)
 ```
 
 4.   Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
@@ -139,16 +172,17 @@ Ans.
 # Create new data frame with only Ale and IPA Beers
 # Next, create dummy variable for Ale vs IPA
 
-df_ale = df %>% filter(str_detect(Style,"Ale"))
-df_IPA = df %>% filter(str_detect(Style,"IPA"))
+#df_ale = df %>% filter(str_detect(Style,"Ale"))
+#df_IPA = df %>% filter(str_detect(Style,"IPA"))
 
-new_df = rbind.data.frame(df_ale,df_IPA)
+#new_df$ale_IPA = grepl("Ale",new_df$Style)
 
-new_df$ale_IPA = grepl("Ale",new_df$Style)
+#new_df$ale_IPA[new_df$ale_IPA == 'TRUE'] = 'Ale'
+#new_df$ale_IPA[new_df$ale_IPA == 'FALSE'] = 'IPA'
+#new_df$ale_IPA = as.factor(new_df$ale_IPA)
 
-new_df$ale_IPA[new_df$ale_IPA == 'TRUE'] = 'Ale'
-new_df$ale_IPA[new_df$ale_IPA == 'FALSE'] = 'IPA'
-new_df$ale_IPA = as.factor(new_df$ale_IPA)
+new_df <- df %>% filter(Style_Group %in% c('Ale', 'IPA'))
+new_df$Style_Group = factor(new_df$Style_Group)
 
 # Perform KNN model using ABV and IBU
 # Hyper-tune to be completed on K value
@@ -159,13 +193,13 @@ new_df$zABV = as.numeric(scale(new_df$ABV))
 new_df$zIBU = as.numeric(scale(new_df$IBU))
 
 # Create 70/30 Train/Test Split
-trainInd = sample(seq(1,1547,1), .7*1547)
+trainInd = sample(seq(1,1534,1), .7*1534)
 train = new_df[trainInd,]
 test = new_df[-trainInd,]
 
 # Initial run of KNN model with K=5 
-classifications = knn(train[,c(12,13)],test[,c(12,13)],train$ale_IPA,prob = TRUE, k = 5)
-confusionMatrix(table(classifications,test$ale_IPA))
+classifications = knn(train[,c(12,13)],test[,c(12,13)],train$Style_Group,prob = TRUE, k = 5)
+confusionMatrix(table(classifications,test$Style_Group))
 
 # Loop to find best value for K with 70/30 train-test split
 
@@ -184,9 +218,9 @@ for(j in 1:iterations)
   test = new_df[-trainIndices,]
   for(i in 1:numks)
   {
-    classifications = knn(train[,c(12,13)],test[,c(12,13)],train$ale_IPA, prob = TRUE, k = i)
-    table(classifications,test$ale_IPA)
-    CM = confusionMatrix(table(classifications,test$ale_IPA))
+    classifications = knn(train[,c(12,13)],test[,c(12,13)],train$Style_Group, prob = TRUE, k = i)
+    table(classifications,test$Style_Group)
+    CM = confusionMatrix(table(classifications,test$Style_Group))
     masterAcc[j,i] = CM$overall[1]
     masterSen[j,i] = CM$byClass[1]
     masterSpe[j,i] = CM$byClass[2]
@@ -210,13 +244,13 @@ plot(seq(1,numks,1),MeanSpe, type = "l")
 which.max(MeanSpe)
 max(MeanSpe)
 
-# K = 6 gives highest accuracy (81%)
-# K = 10 gives highest sensitivity (87%)
-# K = 62 gives highest specificity (73%)
+# K = 19 gives highest accuracy (92%)
+# K = 19 gives highest sensitivity (94%)
+# K = 27 gives highest specificity (89%)
 
 # Run KNN model with K=6 for highest accuracy (per hyper tuning)
-classifications = knn(train[,c(12,13)],test[,c(12,13)],train$ale_IPA,prob = TRUE, k = 6)
-confusionMatrix(table(classifications,test$ale_IPA))
+classifications = knn(train[,c(12,13)],test[,c(12,13)],train$Style_Group,prob = TRUE, k = 19)
+confusionMatrix(table(classifications,test$Style_Group))
 
 ```
 
@@ -231,9 +265,9 @@ train_nb = new_df[trainIndices,]
 test_nb = new_df[-trainIndices,]
 
 # Create model and print confusion matrix
-model = naiveBayes(train_nb[,c(12,13)],train_nb$ale_IPA,laplace = 1)
-table(predict(model,test_nb[,c(12,13)]),test_nb$ale_IPA)
-CM = confusionMatrix(table(predict(model,test_nb[,c(12,13)]),test_nb$ale_IPA))
+model = naiveBayes(train_nb[,c(12,13)],train_nb$Style_Group,laplace = 1)
+table(predict(model,test_nb[,c(12,13)]),test_nb$Style_Group)
+CM = confusionMatrix(table(predict(model,test_nb[,c(12,13)]),test_nb$Style_Group))
 CM
 
 
@@ -251,15 +285,20 @@ CM
 
 ```{r}
 # create copy of original df to try different impute method
-new_df2 = merge(beers,breweries,"Brew_ID",suffixes = c('_Beers','_Brewery'))
+#new_df2 = merge(beers,breweries,"Brew_ID",suffixes = c('_Beers','_Brewery'))
 
-new_df2$Ale = grepl("Ale",new_df2$Style)
-new_df2$IPA = grepl("IPA",new_df2$Style)
-new_df2$Lager = grepl("Lager",new_df2$Style)
-new_df2$Stout = grepl("Stout",new_df2$Style)
-new_df2$Other = as.logical(ifelse(new_df2$Ale + new_df2$IPA + new_df2$Lager + new_df2$Stout == 0, "TRUE","FALSE"))
+# creating dummy variables
+#new_df2$Ale = grepl("Ale",new_df2$Style)
+#new_df2$IPA = grepl("IPA",new_df2$Style)
+#new_df2$Lager = grepl("Lager",new_df2$Style)
+#new_df2$Stout = grepl("Stout",new_df2$Style)
+#new_df2$Other = as.logical(ifelse(new_df2$Ale + new_df2$IPA + new_df2$Lager + new_df2$Stout == 0, "TRUE","FALSE"))
 
-new_df2$Style_Type = as.factor(names(new_df2[11:15])[max.col(new_df2[11:15])])
+# combining dummy variables
+#new_df2$Style_Type = as.factor(names(new_df2[11:15])[max.col(new_df2[11:15])])
+
+# dropping dummy variables to clean df
+#new_df2 = subset(new_df2, select = -c(Ale,IPA,Lager,Lager,Stout,Other))
 
 ```
 
