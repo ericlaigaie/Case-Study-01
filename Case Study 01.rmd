@@ -16,6 +16,7 @@ library(choroplethrMaps)
 library(ggpubr)
 library(class)
 library(caret)
+library(e1071)
 ```
 
 ```{r}
@@ -36,7 +37,7 @@ breweries %>%
   theme_minimal()
 
 # Load in State Brewery Counts (This changes State name from "AL" -> "alabama")
-states <- read_csv("C:\\Users\\ericl\\OneDrive\\Desktop\\SMU\\Doing Data Science - FALL 2021\\Case Study 01\\state_brewery_counts.csv")
+states <- read_csv(url("https://raw.githubusercontent.com/ericlaigaie/Case-Study-01/main/state_brewery_counts.csv"))
 
 # Import geojson for state polygons
 data(continental_us_states)
@@ -179,15 +180,14 @@ ggplot(df_alc, aes(y=ABV,x=IBU)) +
 # Create new data frame with only Ale and IPA Beers
 # Next, create dummy variable for Ale vs IPA
 
-df_ale = df %>% filter(str_detect(Style,"Ale"))
-df_IPA = df %>% filter(str_detect(Style,"IPA"))
+df_ale = df %>% filter(grepl("Ale", df$Style) == TRUE) %>% filter(Style != 'English India Pale Ale (IPA)')
+df_IPA = df %>% filter(grepl("IPA", df$Style) == TRUE)
 
-new_df = rbind.data.frame(df_ale,df_IPA)
+df_IPA$ale_IPA = 'IPA'
+df_ale$ale_IPA = 'Ale'
 
-new_df$ale_IPA = grepl("Ale",new_df$Style)
+new_df = rbind(df_ale,df_IPA)
 
-new_df$ale_IPA[new_df$ale_IPA == 'TRUE'] = 'Ale'
-new_df$ale_IPA[new_df$ale_IPA == 'FALSE'] = 'IPA'
 new_df$ale_IPA = as.factor(new_df$ale_IPA)
 
 # Perform KNN model using ABV and IBU
