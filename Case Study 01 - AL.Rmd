@@ -291,6 +291,14 @@ names(regions)[2] = 'State'
 
 
 new_df2 = merge(df,regions,"State")
+new_df2$Region = as.factor(new_df2$Region)
+
+new_df2 %>% group_by(Region) %>% summarise(meanABV = mean(ABV)) %>% ggplot(aes(x=meanABV, y=Region)) + geom_bar(stat = 'identity')
+
+new_df2 %>% group_by(Region) %>% summarise(meanIBU = mean(IBU)) %>% ggplot(aes(x=meanIBU, y=Region)) + geom_bar(stat = 'identity')
+
+new_df2 %>% group_by(Region) %>% summarise(meanABV = mean(ABV),meanIBU = mean(IBU)) %>% ggplot(aes(x=meanABV, y=meanIBU,color=Region)) + geom_point(stat = 'identity')
+
 ```
 
 ```{r}
