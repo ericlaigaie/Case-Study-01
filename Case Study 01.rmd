@@ -319,3 +319,46 @@ state_choropleth(choro_df,
 
 ```
 
+```{r}
+
+# Remove missing Styles
+df <- df %>% filter(is.na(Style) == FALSE)
+
+
+# Function takes in df and imputes mean ABV and IBU. Also creates Style_Group column
+imputer <- function(mydf, myText) {
+  temp <- {{mydf}}
+  for(i in 1:ncol(temp)){
+    temp[is.na(temp[,i]), i] <- mean(temp[,i], na.rm = TRUE)
+  }
+  temp$Style_Group <- {{myText}}
+  output <- temp
+}
+
+# Creating new dfs for each style group
+ale <- df %>% filter(grepl('Ale', df$Style) == TRUE) %>% filter(Style != 'English India Pale Ale (IPA)')
+ipa <- df %>% filter(grepl('IPA', df$Style) == TRUE)
+lager <- df %>% filter(grepl('Lager', df$Style) == TRUE)
+stout <- df %>% filter(grepl('Stout', df$Style) == TRUE)
+other <- df %>% filter(grepl('Stout', df$Style) == FALSE &
+                grepl('Lager', df$Style) == FALSE &
+                grepl('IPA', df$Style) == FALSE &
+                grepl('IPA', df$Style) == FALSE &
+                grepl('Ale', df$Style) == FALSE)
+
+# Imputing mean ABV / IBU
+ale <- imputer(ale, 'Ale')
+ipa <- imputer(ipa, 'IPA')
+lager <- imputer(lager, 'Lager')
+stout <- imputer(stout, 'Stout')
+other <- imputer(other, 'Other')
+
+# Combine back into df
+last_df <- rbind(ale, ipa, lager, stout, other)
+last_df$Style_Group <- as.factor(last_df$Style_Group)
+
+# Table with mean ABVs / IBUs per Group
+last_df %>% group_by(Style_Group) %>% summarize(meanABV = mean(ABV), meanIBU = mean(IBU))
+
+```
+
