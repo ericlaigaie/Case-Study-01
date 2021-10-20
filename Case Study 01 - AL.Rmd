@@ -247,5 +247,19 @@ CM
 # clustering?
 # impute IBU with mean or median and rerun models? 
 # create groups for ibu and abv (low, median, high) and see what types of beers are the most popular. Per state?
+```
+
+```{r}
+# create copy of original df to try different impute method
+new_df2 = merge(beers,breweries,"Brew_ID",suffixes = c('_Beers','_Brewery'))
+
+new_df2$Ale = grepl("Ale",new_df2$Style)
+new_df2$IPA = grepl("IPA",new_df2$Style)
+new_df2$Lager = grepl("Lager",new_df2$Style)
+new_df2$Stout = grepl("Stout",new_df2$Style)
+new_df2$Other = as.logical(ifelse(new_df2$Ale + new_df2$IPA + new_df2$Lager + new_df2$Stout == 0, "TRUE","FALSE"))
+
+new_df2$Style_Type = as.factor(names(new_df2[11:15])[max.col(new_df2[11:15])])
 
 ```
+
