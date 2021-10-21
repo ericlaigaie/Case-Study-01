@@ -2,9 +2,15 @@
 title: "Case Study - 01"
 author: "Eric Laigaie"
 date: "10/5/2021"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
+# Introduction:
+
+
+### Package Load-In
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 rm(list = ls())
@@ -21,18 +27,19 @@ library(multcomp)
 library(DescTools)
 ```
 
+### Beers and Breweries .csv Load-In
 ```{r}
 # Load in Both Beers and Breweries datasets.
 beers <- read_csv(url("https://raw.githubusercontent.com/ericlaigaie/Case-Study-01/main/Beers.csv?token=AL7L5SUDXIN5C6OJ62LPMELBLTXMC"))
 breweries <- read_csv(url("https://raw.githubusercontent.com/ericlaigaie/Case-Study-01/main/Breweries.csv?token=AL7L5SSPZ7B6NQBXJIMILGDBLTXOM"))
 ```
 
-1.   How many breweries are present in each state?
+## 1.   How many breweries are present in each state?
 ```{r State n, fig.height=5}
 # Brewery Bar Chart
 breweries %>%
   group_by(State) %>%
-  mutate(n = n()) %>%
+  summarize(n = n()) %>%
   ggplot(aes(x=n, y=reorder(State, n))) + 
   geom_bar(stat='identity', fill='darkseagreen4') + 
   labs(x='State', y='Number of Breweries', title='Number of Breweries by State') + 
@@ -57,8 +64,10 @@ state_choropleth(states,
        fill = "n") +
   guides(fill=guide_legend(title="N"))
 ```
+Brewery count varies from state to state. Colorado, California, and Michigan lead the way with over 30 breweries while the bottom 33 states have less than 10 each. In an effort to find geographic patterns, a map was produced. After observation, no solid conclusion was made. One hypothesis is that coastline could increase the number of breweries, as both coasts, Texas, and the Great Lakes region holds the majority of breweries.
 
-2.   Merge beer data with the breweries data. Print the first 6 observations and the last six observations to check the merged file.  (RMD only, this does not need to be included in the presentation or the deck.)
+
+## 2. Merge beer data with the breweries data. Print the first 6 observations and the last six observations to check the merged file.  (RMD only, this does not need to be included in the presentation or the deck.)
 ```{r}
 # Merge beers and breweries
 breweries <- breweries %>% rename(Brewery_id=Brew_ID)
@@ -70,33 +79,9 @@ df <- df %>% rename(Brewery = Name.x, Beer = Name.y)
 head(df, 6)
 tail(df, 6)
 ```
+After merging the datasets, we are left with a larger dataframe that not only holds information on each brewery, but the individuals beers inside of them.
 
-3.   Address the missing values in each column.
-```{r}
-# METHOD 1 - REMOVE ALL
-
-# Print all columns and # of NA's
-#sapply(df, function(x) sum(is.na(x)))
-
-# Remove all NA's
-#df <- na.omit(df)
-```
-
-```{r}
-# METHOD 2 - EQUALS ZERO
-
-# Set NA ABV's and IBU's to 0
-df$ABV[is.na(df$ABV)] = 0
-df$IBU[is.na(df$IBU)] = 0
-
-# Show that remaining NA's are in 'Style'
-sum(is.na(df))
-sum(is.na(df$Style))
-
-# Remove 5 missing 'Styles'
-df = na.omit(df)
-```
-
+## 3. Address the missing values in each column.
 ```{r}
 # METHOD 3 - MEAN IMPUTATION BY STYLE GROUP
 
@@ -135,8 +120,9 @@ other <- imputer(other, 'Other')
 df <- rbind(ale, ipa, lager, stout, other)
 df$Style_Group <- as.factor(df$Style_Group)
 ```
+Because missing values are found in over 40% of the IBU column, it was important to avoid removing them outright. Therefore, the dataset was split into 5 groups based on beer style (Ale, IPA, Lager, Stout, and Other). Then, the missing values in each group were imputed with the group mean of that variable. Additionally, 5 missing Styles were found. Since this missing data is a small part of the full dataframe, these rows with missing values were removed.
 
-4.   Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
+## 4. Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
 ```{r med_abv, fig.height=5}
 # Median ABV bar chart
 df %>% group_by(State) %>% 
@@ -152,26 +138,35 @@ df %>% group_by(State) %>%
   geom_bar(stat='identity', fill='darkseagreen4') +
   labs(x='Median IBU', y='State', title='Median IBU by State')
 ```
+Both the median ABV and IBU charts do not show a lot of variation between states. 44/51 states have a median ABV between .05 and .06, and 40/51 states a median IBU between 30 and 50. Additionally, 25 states have an almost identical median IBU. This is most likely a product of these states having many missing IBU values that were imputed manually.
 
-5.   Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+
+## 5. Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
 ```{r}
 # Find max ABV & IBU
 max_ABV = max(df$ABV)
 max_IBU = max(df$IBU)
 df %>% filter(ABV == max_ABV)
 df %>% filter(IBU == max_IBU)
-```
 
-6.   Comment on the summary statistics and distribution of the ABV variable.
+ABV_diff <- (max_ABV - mean(df$ABV)) / sd(df$ABV)
+IBU_diff <- (max_IBU - mean(df$IBU)) / sd(df$IBU)
+
+#ABV_diff ---> 5.09
+#IBU_diff ---> 4.30
+```
+The max ABV is .128 (12.8%), which is 5.09 standard deviations above the mean of .06. The max IBU is 138, which is 4.30 standard deviations above the mean of 40.97.
+
+## 6. Comment on the summary statistics and distribution of the ABV variable.
 ```{r}
 # Quick summary of ABV - full dataset
 summary(df$ABV)
 sd(df$ABV)
 
 # Make 4 charts
-box_all <- ggplot(df, aes(x=ABV)) + geom_boxplot(binwidth=.01, fill='darkseagreen4') + 
+box_all <- ggplot(df, aes(x=ABV)) + geom_boxplot(fill='darkseagreen4') + 
   labs(x='ABV', title='ABV Boxplot')
-hist_all <- ggplot(df, aes(x=ABV)) + geom_histogram(color='black', fill='darkseagreen4') +
+hist_all <- ggplot(df, aes(x=ABV)) + geom_histogram(binwidth = .005, color='black', fill='darkseagreen4') +
   labs(x='ABV', title='ABV Histogram')
 
 # Arrange 4 charts
@@ -181,8 +176,9 @@ ggarrange(box_all, hist_all, nrow=2, ncol=1)
 shapiro.test(df$ABV)
 qqnorm(df$ABV, col='darkseagreen4', lwd=2)
 ```
+Using both graphical and statistical methods, we concluded that the ABV distribution is skewed right. While there is a large numbers of beers centered around the mean of .06, there is a tail of more alcoholic beers towards the higher ABV side.
 
-7.   Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
+## 7. Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
 ```{r}
 # Find correlation of IBU and ABV in df
 cor_IBUABV = round(cor(df$IBU, df$ABV), 3)
@@ -196,28 +192,10 @@ ggplot(df, aes(x=IBU, ABV)) +
   geom_smooth(method='lm', color='darkseagreen4') +
   labs(x='International Bittering Units (IBU)', y='Alcohol by Volume (ABV)', title='IBU vs ABV') +
   geom_label(label=label_x, x=100, y=.025,label.padding = unit(0.55, "lines"), label.size = 0.35, color = "black", fill="#69b3a2")
-
-# BELOW ONLY APPLICABLE WHEN NA METHOD 2 IS USED
-
-# Make new df, df_alc, which contains rows with IBU > 0 and ABV > 0
-#df_alc <- df %>%
-#  filter(IBU > 0 & ABV > 0)
-
-# Find correlation of IBU and ABV in df_alc
-#cor_alcIBUABV = round(cor(df_alc$IBU, df_alc$ABV), 3)
-
-# Make R label
-#label_y = paste(c("R = ", cor_alcIBUABV), collapse = " ")
-
-# IBU and ABV scatterplot (From df_alc, with R label)
-#ggplot(df_alc, aes(y=ABV,x=IBU)) + 
-#  geom_point(size=2, color='darkseagreen3') + 
-#  geom_smooth(method='lm',color='darkseagreen4') + 
-#  labs(x='International Bittering Units (IBU)', y='Alcohol by Volume (ABV)', title='IBU vs ABV (IBU & ABV > 0)') +
-#  geom_label(label=label_y, x=100, y=0.035,label.padding = unit(0.55, "lines"), label.size = 0.35, color = "black", #fill="#69b3a2")
 ```
+There is a moderate positive correlation between ABV and IBU (R = .0557). As either variable increases/decreases, we can moderately expect the other to move in the same direction. 
 
-8.  Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.
+## 8. Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually.
 ```{r}
 
 # Create new data frame with only Ale and IPA Beers
@@ -305,7 +283,10 @@ classifications = knn(train[,c(7,8)],test[,c(7,8)],train$Style_Group,prob = TRUE
 confusionMatrix(table(classifications,test$Style_Group))
 
 ```
+A KNN model using k=5 was found to produce the highest average accuracy at 91.3%. Therefore, an optimized KNN model could accurately predict >90% of beers as Ales or IPAs based solely on their ABV and IBU. This tells us that ABV and IBU is homogenous within the Ale or IPA style or sub-styles. Basically, if a beer with X ABV and Y IBU is an Ale, it is likely that the majority of the most similar beers are Ales as well.
 
+
+## 8.5: Additional Modeling
 In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged.
 ```{r}
 # Using Naive-Bayes to investigate relationship
@@ -325,250 +306,67 @@ CM
 
 ```
 
-9. Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence.
+## 9. Knock their socks off!  Find one other useful inference from the data that you feel Budweiser may be able to find value in.  You must convince them why it is important and back up your conviction with appropriate statistical evidence.
+
+### Load in Regions data and visualize.
 ```{r}
-new <- df %>%
-  group_by(State) %>%
-  summarize(
-    mean_IBU = mean(IBU), mean_ABV = mean(ABV)
-  )
-
-states$mean_IBU <- new$mean_IBU
-states$mean_ABV <- new$mean_ABV
-
-# Import geojson for state polygons
-data(continental_us_states)
-
-# Designate region & value
-choro_df <- data.frame('region' = states$State, 'value' = states$mean_IBU)
-
-# Create Choropleth
-state_choropleth(choro_df, 
-                 num_colors=6,
-                 zoom = continental_us_states) +
-  scale_fill_brewer(palette="Greens") +
-  labs(title = "Average IBU by State",
-       fill = "n") +
-  guides(fill=guide_legend(title="Mean IBU"))
-
-# Designate region & value
-choro_df <- data.frame('region' = states$State, 'value' = states$mean_ABV)
-
-# Create Choropleth
-state_choropleth(choro_df, 
-                 num_colors=6,
-                 zoom = continental_us_states) +
-  scale_fill_brewer(palette="Greens") +
-  labs(title = "Average ABV by State",
-       fill = "n") +
-  guides(fill=guide_legend(title="Mean ABV"))
-
-choro_plotter <- function(myStyle) {
-  temp <- df %>% group_by(State, Style_Group) %>% summarize(n = n())
-  temp <- temp %>% group_by(State) %>% mutate(Percent = 100*n/sum(n))
-  temp <- temp %>% filter(Style_Group == {{myStyle}})
-  
-  print(temp)
-  
-  choro_df <- data.frame('region' = states$State, 'value' = temp$Percent)
-  
-  state_choropleth(choro_df,
-                   num_colors=6,
-                   zoom = continental_us_states) +
-    scale_fill_brewer(palette='Greens') +
-    labs(title=paste('Percent of', {{myStyle}}, 'beers by State', sep=" ",collapse=NULL), fill='n') +
-    guides(fill=guide_legend(title=paste({{myStyle}}, 'percent', sep = " ", collapse = NULL)))
-}
-
-choro_plotter('Ale')
-choro_plotter('IPA')
-choro_plotter('Stout')
-choro_plotter('Lager')
-choro_plotter('Other')
-
+# Load in regions data
 regions = read_csv(url('https://raw.githubusercontent.com/ericlaigaie/Case-Study-01/main/regions_v2.csv'))
 
 # remove State Column and rename abbreviations to 'State' to merge
 regions = subset(regions, select = -c(State))
 names(regions)[2] = 'State'
+df = merge(df,regions,"State")
 
+# Prep data for choropleth
+df$Region <- as.factor(df$Region)
+regions <- regions %>% arrange(State)
 
-new_df2 = merge(df,regions,"State")
-ggplot(new_df2, aes(x=Region, fill=Region)) + geom_bar()
+# Designate region & value
+choro_df <- data.frame('region' = states$State, 'value' = regions$Region)
 
-temp<-new_df2 %>% group_by(Region) %>% summarize(meanABV = mean(ABV), meanIBU =mean(IBU))
-ggplot(temp, aes(x=meanABV, y=meanIBU, color=Region)) +geom_point() +geom_text(aes(label=Region))
-
-fill <- ggplot(new_df2, aes(y=Region, fill=Style_Group)) + geom_bar(position='fill', color='black') + labs(y='Region', x='Proportions of Beers (Filled by Style)', title='Style Proportions by Region')
-
-stack <- ggplot(new_df2, aes(y=Region, fill=Style_Group)) + geom_bar(position='stack', color='black') + labs(y='Region', x='Count of Beers (Filled by Style)', title='Style Counts by Region')
-
-ggarrange(stack, fill, nrow=2)
-
-
-
-
-fit <- aov(ABV ~ Region, data=new_df2)
-summary(fit)
-
-fit<-kruskal.test(IBU ~ Region, data=new_df2)
-kruskal.test(ABV ~ Region, data=new_df2)
-
-PostHocTest(fit, method = "bonferroni")
-
-quantile(new_df2$ABV, c(.3,.7))
-quantile(new_df2$IBU, c(.3,.7))
-
-new_df2$ABV_tier <- cut(new_df2$ABV, breaks = c(0, .051, .065, 1), labels = c("Low","Medium","High"))
-new_df2$IBU_tier <- cut(new_df2$IBU, breaks = c(0, 26.55937, 45.03922, 200), labels = c("Low","Medium","High"))
-
-fill2 <- ggplot(new_df2, aes(y=Region, fill=ABV_tier)) + geom_bar(position='fill', color='black') + labs(y='Region', x='Proportions of Beers (Filled by ABV_tier)', title='ABV_tier Proportions by Region')
-
-stack2 <- ggplot(new_df2, aes(y=Region, fill=ABV_tier)) + geom_bar(position='stack', color='black') + labs(y='Region', x='Count of Beers (Filled by ABV_tier)', title='ABV_tier Counts by Region')
-
-fill3 <- ggplot(new_df2, aes(y=Region, fill=IBU_tier)) + geom_bar(position='fill', color='black') + labs(y='Region', x='Proportions of Beers (Filled by IBU_tier)', title='IBU_tier Proportions by Region')
-
-stack3 <- ggplot(new_df2, aes(y=Region, fill=IBU_tier)) + geom_bar(position='stack', color='black') + labs(y='Region', x='Count of Beers (Filled by IBU_tier)', title='IBU_tier Counts by Region')
-
-ggarrange(stack2, fill2, nrow=2)
-ggarrange(stack3, fill3, nrow=2)
-
-
-ggplot(new_df2, aes(x=ABV, y=Region,fill=Region)) + geom_boxplot() + facet_wrap(~Style_Group) + theme(legend.position='none')
-
-ggplot(new_df2, aes(x=IBU, y=Region,fill=Region)) + geom_boxplot() + facet_wrap(~Style_Group) + theme(legend.position='none')
-
-
-# Create a word bank with average ABV & IBU per word?
-
-# Create word_bank
-word_bank <- c()
-
-# Fill bank with all words used within new_df2$Beer
-for (i in 1:length(new_df2$Beer)) {
-  current <- new_df2$Beer[i]
-  current <- str_split(current, ' ')
-  for (curr in current) {
-    word_bank <- append(word_bank, curr)
-  }
-}
-# Filter out any duplicates
-word_bank <- unique(word_bank)
-
-# Create new vectors for the dataframe below
-mean_ABV <- numeric(length(word_bank))
-mean_IBU <- numeric(length(word_bank))
-count <- numeric(length(word_bank))
-
-# Create dataframe to be filled
-word_df <- data.frame("Word" = word_bank, "mean_ABV" = mean_ABV, "mean_IBU" = mean_IBU, 'Count' = count)
-
-# Filter out any words with non-A to Z characters (was causing an error)
-letters_only <- function(x) !grepl("[^A-Za-z]", x)
-word_df <- word_df %>% filter( letters_only(Word) == TRUE)
-
-# Fill dataframe by searching df and taking mean ABV and IBU for each word in bank
-for (i in 1:length(word_df$Word)) {
-  current <- word_df$Word[i]
-  filtered_new_df2 <- df %>% filter(grepl(current, df$Beer) == TRUE)
-  word_df$mean_ABV[i] <- mean(filtered_new_df2$ABV)
-  word_df$mean_IBU[i] <- mean(filtered_new_df2$IBU)
-  word_df$Count[i] <- length(filtered_new_df2$IBU)
-}
-# Only words that are common (does include the 'a', 'b' stopwords. Can be removed, don't need to be)
-common_words <- word_df %>% filter(Count > 10)
-
-library(ggrepel)
-
-# These are the words with the highest/lowest mean ABV or IBU
-label <- c('Imperial', 'Series', 'Double', 'Barrel', 'Hill', 'Nonstop', 'Session', 'Hef', 'Light', 'Wit', 'IPA', 'PA', 'India', 'Wit', 'Beach', 'Hell', 'Weiss')
-
-# Plot with selective labels
-ggplot(common_words, aes(x=mean_ABV, y=mean_IBU)) + 
-  geom_point(aes(size=Count, color=Count)) + 
-  geom_label_repel(data= common_words %>% filter(Word %in% label), aes(label=Word)) +
-  scale_colour_gradient(low='darkgreen',high='lightgreen') +
-  labs(x = 'Average ABV', y = 'Average IBU', title = 'Average ABV & IBU by Word : Size & Color by Usage Count') +
-  theme(legend.position='none')
+# Create Choropleth
+state_choropleth(choro_df, 
+                 num_colors=7,
+                 zoom = continental_us_states) +
+  scale_fill_brewer(palette="Set1") +
+  labs(title = "Regions",
+       fill = "n") +
+  guides(fill=guide_legend(title="Region"))
 ```
+This is a map of our regions. The next code cell will use statistical tests to examine how ABV and IBU distributions differ between regions.
 
+### Checking Assumptions of ANOVA
 ```{r}
-# Create word_bank
-word_bank_brew <- c()
+# ABV
+ggplot(df, aes(x=ABV, y=Region)) + geom_boxplot()
+ggplot(df, aes(x=ABV)) + geom_histogram() + facet_wrap(~Region)
 
-# Fill bank with all words used within new_df2$Beer
-for (i in 1:length(new_df2$Brewery)) {
-  current <- new_df2$Brewery[i]
-  current <- str_split(current, ' ')
-  for (curr in current) {
-    word_bank_brew <- append(word_bank_brew, curr)
-  }
-}
-# Filter out any duplicates
-word_bank_brew <- unique(word_bank_brew)
-
-# Create new vectors for the dataframe below
-mean_ABV <- numeric(length(word_bank_brew))
-mean_IBU <- numeric(length(word_bank_brew))
-count <- numeric(length(word_bank_brew))
-
-# Create dataframe to be filled
-word_df_brew <- data.frame("Word" = word_bank_brew, "mean_ABV" = mean_ABV, "mean_IBU" = mean_IBU, 'Count' = count)
-
-# Filter out any words with non-A to Z characters (was causing an error)
-letters_only <- function(x) !grepl("[^A-Za-z]", x)
-word_df_brew <- word_df_brew %>% filter( letters_only(Word) == TRUE)
-
-# Fill dataframe by searching df and taking mean ABV and IBU for each word in bank
-for (i in 1:length(word_df_brew$Word)) {
-  current <- word_df_brew$Word[i]
-  filtered_new_df2 <- df %>% filter(grepl(current, df$Brewery) == TRUE)
-  word_df_brew$mean_ABV[i] <- mean(filtered_new_df2$ABV)
-  word_df_brew$mean_IBU[i] <- mean(filtered_new_df2$IBU)
-  word_df_brew$Count[i] <- length(filtered_new_df2$IBU)
-}
-# Only words that are common (does include the 'a', 'b' stopwords. Can be removed, don't need to be)
-common_words_brew <- word_df_brew %>% filter(Count > 10)
-
-# These are the words with the highest/lowest mean ABV or IBU
-label <- c('Upslope', 'Oskar', 'Blues', 'Amendment', 'Vivant', 'Hopworks', 'Urban', 'Stevens', 'Matt', 'Capital', 'Surly', 'Mike', 'Caldera', 'Minhas', 'Anderson', 'Point', 'Cider')
-
-# Plot with selective labels
-ggplot(common_words_brew, aes(x=mean_ABV, y=mean_IBU)) + 
-  geom_point(aes(size=Count, color=Count)) + 
-  geom_label_repel(data= common_words_brew %>% filter(Word %in% label), aes(label=Word)) +
-  scale_colour_gradient(low='darkgreen',high='lightgreen') +
-  labs(x = 'Average ABV', y = 'Average IBU', title = 'Average ABV & IBU by Word : Size & Color by Usage Count') +
-  theme(legend.position='none')
-
-```
-
-```{r}
-# We want to test if the mean/median ABV or IBU is significantly different between regions.
-
-# Checking Assumptions
-
-ggplot(new_df2, aes(x=ABV, y=Region)) + geom_boxplot()
-ggplot(new_df2, aes(x=ABV)) + geom_histogram() + facet_wrap(~Region)
-# While Regions have similar variances, I can't say that they are normally distributed. Although the CLT may allows us to bypass this assumption, I will stick with a non-parametric test to be safe.
-
-ggplot(new_df2, aes(x=IBU, y=Region)) + geom_boxplot()
-ggplot(new_df2, aes(x=IBU)) + geom_histogram() + facet_wrap(~Region)
-# There is overwhelming evidence that the distributions are not normal and that regions do not have similar variance. Because of this, a non-parametric test is required.
+# IBU
+ggplot(df, aes(x=IBU, y=Region)) + geom_boxplot()
+ggplot(df, aes(x=IBU)) + geom_histogram() + facet_wrap(~Region)
 
 # We are assuming independence both with-in and between groups.
+```
+ABV: While regions have similar variances, I can't say that they are normally distributed. Although the CLT may allows us to bypass this assumption, I will stick with a non-parametric test to be safe.
 
-# Non-parametric ANOVA (Kruskal Wallis Test)
+IBU: There is overwhelming evidence that the distributions are not normal and that regions do not have similar variance. Because of this, a non-parametric test is required.
 
-kruskal.test(ABV~Region, new_df2)
+### Kruskal Wallis Test
+```{r}
+kruskal.test(ABV~Region, df)
 # P-value < .05, so we say that there is evidence to suggest that at least one of the Region median ABVs is significantly different from the others.
 
-kruskal.test(IBU~Region, new_df2)
+kruskal.test(IBU~Region, df)
 # P-value > .05, so we say that there is not enough evidence to suggest that there is a difference in Region-specific ABV medians.
+```
+The Kruskal-Wallis test provides sufficient evidence to suggest that at least one region has a mean ABV that differs significantly from the others. Further testing down below (P-value = .00035).
 
-# To find which exact regions have differing median ABVs, we will use Rank Sum Tests. The function below calculates all combinations of the regions in our df and tests them using wilcox.test.
+The Kruskal-Wallis test suggests that there is not enough evidence to say that any region's mean IBU differs significantly from any others. No further testing needed (P-value = .0778).
 
-regions <- unique(as.character(new_df2$Region))
+### To find which exact regions have differing median ABVs, we will use Rank Sum Tests. The function below calculates all combinations of the regions in our df and tests them using wilcox.test.
+```{r}
+regions <- unique(as.character(df$Region))
 # Pull regions into a list
 
 wilcoxon_tester <- function(myVar) {
@@ -581,8 +379,8 @@ wilcoxon_tester <- function(myVar) {
     for (j in 1:length(regions)) {
       
       if (j != i) {
-        j_df <- new_df2 %>% filter(Region == regions[j]) %>% pull({{myVar}})
-        i_df <- new_df2 %>% filter(Region == regions[i]) %>% pull({{myVar}})
+        j_df <- df %>% filter(Region == regions[j]) %>% pull({{myVar}})
+        i_df <- df %>% filter(Region == regions[i]) %>% pull({{myVar}})
         test <- wilcox.test(x=j_df, y=i_df, alternative='two.sided')
         
         if (test$p.value < .05) {
@@ -601,12 +399,6 @@ wilcox_results <- wilcoxon_tester(ABV)
 
 wilcox_results
 ```
-For this question, we wanted to examine if the mean or median ABV / IBU was consistent throughtout regions.
+The Rank Sum Tests above tell us that 8 out of the 21 region combinations have significantly different mean ABVs. Displayed along the two regions is the p-value from the associated test.
 
-While testing for ANOVA assumptions, it was clear that neither ABV or IBU was normally distributed or had similar variances between groups. Therefore, the assumptions did not pass. This meant that a non-parametric Kruskal Wallis test must be used instead of the ANOVA.
-
-Using the Kruskal Wallis test, we examined if the median ABV / IBU was consistent throughout regions.
-
-While examining ABV, the Kruskal Wallis test gave us a p-value of .0003. Because this is below our significance level of .05, the evidence suggests that at least one median ABV is significantly different than the others. To find out which regions had significant differences, a function was used that ran all region combinations through a Rank Sum Test (wilcox.test). Through this, we found that 8 different region combinations had a significant difference in their median ABVs (p-value < .05).
-
-On the other hand, a Kruskal Wallis test on IBU gave us a p-value of .07. Because this is larger than .05, we can say that there is not enough evidence to suggest that there is a significant difference between any of the median IBUs of regions.
+# Conclusion:
