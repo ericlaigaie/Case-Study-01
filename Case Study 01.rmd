@@ -543,3 +543,70 @@ ggplot(common_words_brew, aes(x=mean_ABV, y=mean_IBU)) +
 
 ```
 
+```{r}
+# We want to test if the mean/median ABV or IBU is significantly different between regions.
+
+# Checking Assumptions
+
+ggplot(new_df2, aes(x=ABV, y=Region)) + geom_boxplot()
+ggplot(new_df2, aes(x=ABV)) + geom_histogram() + facet_wrap(~Region)
+# While Regions have similar variances, I can't say that they are normally distributed. Although the CLT may allows us to bypass this assumption, I will stick with a non-parametric test to be safe.
+
+ggplot(new_df2, aes(x=IBU, y=Region)) + geom_boxplot()
+ggplot(new_df2, aes(x=IBU)) + geom_histogram() + facet_wrap(~Region)
+# There is overwhelming evidence that the distributions are not normal and that regions do not have similar variance. Because of this, a non-parametric test is required.
+
+# We are assuming independence both with-in and between groups.
+
+# Non-parametric ANOVA (Kruskal Wallis Test)
+
+kruskal.test(ABV~Region, new_df2)
+# P-value < .05, so we say that there is evidence to suggest that at least one of the Region median ABVs is significantly different from the others.
+
+kruskal.test(IBU~Region, new_df2)
+# P-value > .05, so we say that there is not enough evidence to suggest that there is a difference in Region-specific ABV medians.
+
+# To find which exact regions have differing median ABVs, we will use Rank Sum Tests. The function below calculates all combinations of the regions in our df and tests them using wilcox.test.
+
+regions <- unique(as.character(new_df2$Region))
+# Pull regions into a list
+
+wilcoxon_tester <- function(myVar) {
+  region_x <- character()
+  region_y <- character()
+  p_value <- numeric()
+  
+  for (i in 1:length(regions)) {
+    
+    for (j in 1:length(regions)) {
+      
+      if (j != i) {
+        j_df <- new_df2 %>% filter(Region == regions[j]) %>% pull({{myVar}})
+        i_df <- new_df2 %>% filter(Region == regions[i]) %>% pull({{myVar}})
+        test <- wilcox.test(x=j_df, y=i_df, alternative='two.sided')
+        
+        if (test$p.value < .05) {
+          region_x <- append(region_x, regions[i])
+          region_y <- append(region_y, regions[j])
+          p_value <- append(p_value, round(test$p.value, 4))
+        }
+      }
+    }
+  }
+  wilcox_results <- data.frame('Region_x'=region_x, 'Region_y'=region_y, 'P_value'=p_value)
+}
+
+# Testing....will print out all tests that are significant.
+wilcox_results <- wilcoxon_tester(ABV)
+
+wilcox_results
+```
+For this question, we wanted to examine if the mean or median ABV / IBU was consistent throughtout regions.
+
+While testing for ANOVA assumptions, it was clear that neither ABV or IBU was normally distributed or had similar variances between groups. Therefore, the assumptions did not pass. This meant that a non-parametric Kruskal Wallis test must be used instead of the ANOVA.
+
+Using the Kruskal Wallis test, we examined if the median ABV / IBU was consistent throughout regions.
+
+While examining ABV, the Kruskal Wallis test gave us a p-value of .0003. Because this is below our significance level of .05, the evidence suggests that at least one median ABV is significantly different than the others. To find out which regions had significant differences, a function was used that ran all region combinations through a Rank Sum Test (wilcox.test). Through this, we found that 8 different region combinations had a significant difference in their median ABVs (p-value < .05).
+
+On the other hand, a Kruskal Wallis test on IBU gave us a p-value of .07. Because this is larger than .05, we can say that there is not enough evidence to suggest that there is a significant difference between any of the median IBUs of regions.
