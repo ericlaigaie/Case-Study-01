@@ -1,0 +1,52 @@
+﻿State,Region,State Abbreviation
+Illinois,Great Lakes,IL
+Indiana,Great Lakes,IN
+Michigan,Great Lakes,MI
+Ohio,Great Lakes,OH
+Wisconsin,Great Lakes,WI
+Alabama,South,AL
+Kentucky,South,KY
+Mississippi,South,MS
+Tennessee,South,TN
+New Jersey,Atlantic,NJ
+New York,Atlantic,NY
+Pennsylvania,Atlantic,PA
+Arizona,Mountain,AZ
+Colorado,Mountain,CO
+Idaho,Mountain,ID
+Montana,Mountain,MT
+Nevada,Mountain,NV
+New Mexico,Mountain,NM
+Utah,Mountain,UT
+Wyoming,Mountain,WY
+Connecticut,New England,CT
+Maine,New England,ME
+Massachusetts,New England,MA
+New Hampshire,New England,NH
+Rhode Island,New England,RI
+Vermont,New England,VT
+Alaska,Pacific,AK
+California,Pacific,CA
+Hawaii,Pacific,HI
+Oregon,Pacific,OR
+Washington,Pacific,WA
+Delaware,Atlantic,DE
+District of Columbia,Atlantic,DC
+Florida,Atlantic,FL
+Georgia,Atlantic,GA
+Maryland,Atlantic,MD
+North Carolina,Atlantic,NC
+South Carolina,Atlantic,SC
+Virginia,Atlantic,VA
+West Virginia,Atlantic,WV
+Iowa,Midwest,IA
+Kansas,Midwest,KS
+Minnesota,Midwest,MN
+Missouri,Midwest,MO
+Nebraska,Midwest,NE
+North Dakota,Midwest,ND
+South Dakota,Midwest,SD
+Arkansas,South,AR
+Louisiana,South,LA
+Oklahoma,South,OK
+Texas,South,TX
