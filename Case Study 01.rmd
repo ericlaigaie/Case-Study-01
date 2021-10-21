@@ -455,10 +455,6 @@ for (i in 1:length(new_df2$Beer)) {
 # Filter out any duplicates
 word_bank <- unique(word_bank)
 
-# Filter out any words with non-A to Z characters (was causing an error)
-letters_only <- function(x) !grepl("[^A-Za-z]", x)
-word_df <- word_df %>% filter( letters_only(Word) == TRUE)
-
 # Create new vectors for the dataframe below
 mean_ABV <- numeric(length(word_bank))
 mean_IBU <- numeric(length(word_bank))
@@ -466,6 +462,10 @@ count <- numeric(length(word_bank))
 
 # Create dataframe to be filled
 word_df <- data.frame("Word" = word_bank, "mean_ABV" = mean_ABV, "mean_IBU" = mean_IBU, 'Count' = count)
+
+# Filter out any words with non-A to Z characters (was causing an error)
+letters_only <- function(x) !grepl("[^A-Za-z]", x)
+word_df <- word_df %>% filter( letters_only(Word) == TRUE)
 
 # Fill dataframe by searching df and taking mean ABV and IBU for each word in bank
 for (i in 1:length(word_df$Word)) {
@@ -487,7 +487,59 @@ label <- c('Imperial', 'Series', 'Double', 'Barrel', 'Hill', 'Nonstop', 'Session
 ggplot(common_words, aes(x=mean_ABV, y=mean_IBU)) + 
   geom_point(aes(size=Count, color=Count)) + 
   geom_label_repel(data= common_words %>% filter(Word %in% label), aes(label=Word)) +
-  theme(legend.position = 'none') +
-  labs(x = 'Average ABV', y = 'Average IBU', title = 'Average ABV & IBU by Word : Size & Color by Usage Count')
+  scale_colour_gradient(low='darkgreen',high='lightgreen') +
+  labs(x = 'Average ABV', y = 'Average IBU', title = 'Average ABV & IBU by Word : Size & Color by Usage Count') +
+  theme(legend.position='none')
+```
+
+```{r}
+# Create word_bank
+word_bank_brew <- c()
+
+# Fill bank with all words used within new_df2$Beer
+for (i in 1:length(new_df2$Brewery)) {
+  current <- new_df2$Brewery[i]
+  current <- str_split(current, ' ')
+  for (curr in current) {
+    word_bank_brew <- append(word_bank_brew, curr)
+  }
+}
+# Filter out any duplicates
+word_bank_brew <- unique(word_bank_brew)
+
+# Create new vectors for the dataframe below
+mean_ABV <- numeric(length(word_bank_brew))
+mean_IBU <- numeric(length(word_bank_brew))
+count <- numeric(length(word_bank_brew))
+
+# Create dataframe to be filled
+word_df_brew <- data.frame("Word" = word_bank_brew, "mean_ABV" = mean_ABV, "mean_IBU" = mean_IBU, 'Count' = count)
+
+# Filter out any words with non-A to Z characters (was causing an error)
+letters_only <- function(x) !grepl("[^A-Za-z]", x)
+word_df_brew <- word_df_brew %>% filter( letters_only(Word) == TRUE)
+
+# Fill dataframe by searching df and taking mean ABV and IBU for each word in bank
+for (i in 1:length(word_df_brew$Word)) {
+  current <- word_df_brew$Word[i]
+  filtered_new_df2 <- df %>% filter(grepl(current, df$Brewery) == TRUE)
+  word_df_brew$mean_ABV[i] <- mean(filtered_new_df2$ABV)
+  word_df_brew$mean_IBU[i] <- mean(filtered_new_df2$IBU)
+  word_df_brew$Count[i] <- length(filtered_new_df2$IBU)
+}
+# Only words that are common (does include the 'a', 'b' stopwords. Can be removed, don't need to be)
+common_words_brew <- word_df_brew %>% filter(Count > 10)
+
+# These are the words with the highest/lowest mean ABV or IBU
+label <- c('Upslope', 'Oskar', 'Blues', 'Amendment', 'Vivant', 'Hopworks', 'Urban', 'Stevens', 'Matt', 'Capital', 'Surly', 'Mike', 'Caldera', 'Minhas', 'Anderson', 'Point', 'Cider')
+
+# Plot with selective labels
+ggplot(common_words_brew, aes(x=mean_ABV, y=mean_IBU)) + 
+  geom_point(aes(size=Count, color=Count)) + 
+  geom_label_repel(data= common_words_brew %>% filter(Word %in% label), aes(label=Word)) +
+  scale_colour_gradient(low='darkgreen',high='lightgreen') +
+  labs(x = 'Average ABV', y = 'Average IBU', title = 'Average ABV & IBU by Word : Size & Color by Usage Count') +
+  theme(legend.position='none')
+
 ```
 
