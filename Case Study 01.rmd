@@ -397,8 +397,18 @@ wilcoxon_tester <- function(myVar) {
 # Testing....will print out all tests that are significant.
 wilcox_results <- wilcoxon_tester(ABV)
 
-wilcox_results
+# Filters out all even rows (each test result is duplicated)
+wilcox_results <- wilcox_results %>% arrange(P_value)
+wilcox_results$odd <- seq_len(nrow(wilcox_results)) %% 2
+
+wilcox_results %>% arrange(Region_x) %>% filter(odd == 1)
+
 ```
 The Rank Sum Tests above tell us that 8 out of the 21 region combinations have significantly different mean ABVs. Displayed along the two regions is the p-value from the associated test.
+
+Interesting Notes:
+  A. The 'South' region does not appear. Therefore, it is similar to all other regions.
+  B. The 'Great Lakes' region appears 4 times, making it the most unique region.
+  C. 
 
 # Conclusion:
