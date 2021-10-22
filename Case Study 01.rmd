@@ -221,16 +221,6 @@ new_df <- df %>% filter(Style_Group %in% c('Ale', 'IPA'))
 new_df$zABV = as.numeric(scale(new_df$ABV))
 new_df$zIBU = as.numeric(scale(new_df$IBU))
 
-# Create 70/30 Train/Test Split
-len <- length(new_df$Style_Group)
-trainInd = sample(seq(1,len,1), .7*len)
-train = new_df[trainInd,]
-test = new_df[-trainInd,]
-
-# Initial run of KNN model with K=5 
-classifications = knn(train[,c(7,8)],test[,c(7,8)],train$Style_Group,prob = TRUE, k = 5)
-confusionMatrix(table(classifications,test$Style_Group))
-
 # Loop to find best value for K with 70/30 train-test split
 
 iterations = 100
