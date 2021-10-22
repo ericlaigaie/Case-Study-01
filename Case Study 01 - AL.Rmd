@@ -283,7 +283,7 @@ CM
 # create groups for ibu and abv (low, median, high) and see what types of beers are the most popular. Per state?
 
 # adding in state regions to find mean ABV/IBU per region
-regions = as.data.frame(read.csv('/Users/alexanderlopez/Documents/SMU/Classes/MSDS_6306_Doing_Data_Science/Case_Study_1/Case-Study-01/state_regions.csv', header = TRUE))
+regions = as.data.frame(read.csv('/Users/alexanderlopez/Documents/SMU/Classes/MSDS_6306_Doing_Data_Science/Case_Study_1/Case-Study-01/regions_v2.csv', header = TRUE))
 
 # remove State Column and rename abbreviations to 'State' to merge
 regions = subset(regions, select = -c(State))
@@ -297,7 +297,22 @@ new_df2 %>% group_by(Region) %>% summarise(meanABV = mean(ABV)) %>% ggplot(aes(x
 
 new_df2 %>% group_by(Region) %>% summarise(meanIBU = mean(IBU)) %>% ggplot(aes(x=meanIBU, y=Region)) + geom_bar(stat = 'identity')
 
-new_df2 %>% group_by(Region) %>% summarise(meanABV = mean(ABV),meanIBU = mean(IBU)) %>% ggplot(aes(x=meanABV, y=meanIBU,color=Region)) + geom_point(stat = 'identity')
+new_df2 %>% group_by(Region) %>% ggplot(aes(x=ABV,fill=Style_Group)) + geom_boxplot() + labs(title = 'ABV by Region by Style Group') + facet_wrap(~Region)
+
+new_df2 %>% group_by(Region) %>% ggplot(aes(x=ABV,y=IBU,col=Style_Group)) + geom_point() + labs(title = 'ABV vs IBU by Region by Style Group') + geom_smooth(method = 'lm')+ facet_wrap(~Region)
+
+new_df2 %>% group_by(Region) %>% ggplot(aes(x=ABV,fill=Region)) + geom_boxplot() + labs(title = 'ABV by Style Group by Region') + facet_wrap(~Style_Group)
+
+library(GGally)
+new_df2 %>% 
+select(Region, ABV, IBU, Style_Group) %>%
+ggpairs(aes(color = Region))
+
+new_df2 %>% 
+select(Region, ABV, IBU, Style_Group) %>%
+ggpairs(aes(color = Style_Group))
+
+# scatterplot facet wrap (region), ibu vs abv per style
 
 ```
 
