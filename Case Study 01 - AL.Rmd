@@ -4,7 +4,7 @@ author: "Eric Laigaie & Alex Lopez"
 date: "10/5/2021"
 output: html_document
 ---
-### Introduction:   In this presentation, we will be looking at the locations of the breweries making beers, beer alcohol content, and beer international bitterness units. After reviewing the data, we will then look at how ABV and IBU can be used to identify whether or not a beer is an IPA or another type of Ale. Finally, we will dive into one other inference that we believe will help you decide what type of beer Budweiser should be producing.
+# Introduction: In this presentation, we will be visualizing and interpreting the characteristics of beers and the breweries that make those beers. Key variables that will be considered for inference include beer alcohol content, beer international bitterness units and brewery locations. The goal of this presentation is to provide feedback and responses to the questions you have proposed. We plan to do this by sharing key insights gathered through our analysis but without the statistical jargon. At the end of the presentation, we plan to share additional insight that was not requested but is imperative to Budweiser if the company plans to produce new beers in the near-term future.
 
 
 ```{r setup, include=FALSE}
@@ -299,8 +299,6 @@ new_df2 %>% group_by(Region) %>% summarise(meanIBU = mean(IBU)) %>% ggplot(aes(x
 
 new_df2 %>% group_by(Region) %>% ggplot(aes(x=ABV,fill=Style_Group)) + geom_boxplot() + labs(title = 'ABV by Region by Style Group') + facet_wrap(~Region)
 
-new_df2 %>% group_by(Region) %>% ggplot(aes(x=ABV,y=IBU,col=Style_Group)) + geom_point() + labs(title = 'ABV vs IBU by Region by Style Group') + geom_smooth(method = 'lm')+ facet_wrap(~Region)
-
 new_df2 %>% group_by(Region) %>% ggplot(aes(x=ABV,fill=Region)) + geom_boxplot() + labs(title = 'ABV by Style Group by Region') + facet_wrap(~Style_Group)
 
 library(GGally)
@@ -314,7 +312,9 @@ ggpairs(aes(color = Style_Group))
 
 # scatterplot facet wrap (region), ibu vs abv per style
 
-```
+new_df2 %>% ggplot(aes(x=ABV,y=IBU,col=Style_Group)) + geom_point() + labs(title = 'ABV vs IBU by Region by Style Group') + geom_smooth(method = 'lm')+ facet_wrap(~Region)
+
+ ```
 
 ```{r}
 # create copy of original df to try different impute method
@@ -335,3 +335,4 @@ ggpairs(aes(color = Style_Group))
 
 ```
 
+# Conclusion: In conclusion, we found that the breweries in the US are mostly located in high density states like Texas and California. We saw that the median beer ABV does not vary all that much between states but also that there are a large number of beers with high ABV’s. This observation is consistent with the idea that craft beers are becoming more and more popular in the US. We also saw a moderate correlation between ABV and IBU, probably because adding hops, a key ingredient in most beers, will make a beer more alcoholic and more bitter. Although the craft beer trend is rising, Budweiser would likely benefit from a lower ABV beer, possibly because most people do not enjoy the bitterness. To further analyze the correlation between ABV and IBU, particularly in Ales vs IPA’s, we ran the data through a KNN model. The model came to show that, given a beer’s ABV and IBU, we could predict whether that beer was an Ale or IPA with an accuracy of over 91%! We also had very similar accuracy results when using a Naïve-Bayes model. In both cases, the models showed that ABV and IBU do not significantly vary in beer styles. Finally, our statistical test (Rank Sum) showed the significance in differing mean ABV between regions. The test indicated that when Budweiser is ready to implement a new beer, the ABV mean in the region of interest, as well as the surrounding regions, should all be carefully considered.

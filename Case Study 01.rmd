@@ -1,13 +1,13 @@
 ---
 title: "Case Study - 01"
-author: "Eric Laigaie"
+author: "Eric Laigaie & Alex Lopez"
 date: "10/5/2021"
 output:
   html_document: default
   pdf_document: default
 ---
 
-# Introduction:
+# Introduction: In this presentation, we will be visualizing and interpreting the characteristics of beers and the breweries that make those beers. Key variables that will be considered for inference include beer alcohol content, beer international bitterness units and brewery locations. The goal of this presentation is to provide feedback and responses to the questions you have proposed. We plan to do this by sharing key insights gathered through our analysis but without the statistical jargon. At the end of the presentation, we plan to share additional insight that was not requested but is imperative to Budweiser if the company plans to produce new beers in the near-term future.
 
 
 ### Package Load-In
@@ -401,4 +401,4 @@ Interesting Notes:
   B. The 'Great Lakes' region appears 4 times, making it the most unique region.
   C. 
 
-# Conclusion:
+# Conclusion: In conclusion, we found that the breweries in the US are mostly located in high density states like Texas and California. We saw that the median beer ABV does not vary all that much between states but also that there are a large number of beers with high ABV’s. This observation is consistent with the idea that craft beers are becoming more and more popular in the US. We also saw a moderate correlation between ABV and IBU, probably because adding hops, a key ingredient in most beers, will make a beer more alcoholic and more bitter. Although the craft beer trend is rising, Budweiser would likely benefit from a lower ABV beer, possibly because most people do not enjoy the bitterness. To further analyze the correlation between ABV and IBU, particularly in Ales vs IPA’s, we ran the data through a KNN model. The model came to show that, given a beer’s ABV and IBU, we could predict whether that beer was an Ale or IPA with an accuracy of over 91%! We also had very similar accuracy results when using a Naïve-Bayes model. In both cases, the models showed that ABV and IBU do not significantly vary in beer styles. Finally, our statistical test (Rank Sum) showed the significance in differing mean ABV between regions. The test indicated that when Budweiser is ready to implement a new beer, the ABV mean in the region of interest, as well as the surrounding regions, should all be carefully considered.
